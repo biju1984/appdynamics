@@ -1,123 +1,93 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
+import React, {Component} from 'react';
+import {Image, Text, TouchableOpacity, View, AppState} from 'react-native';
+import FingerprintScanner from 'react-native-fingerprint-scanner';
 
-import React from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
+import styles from './Application.container.styles';
+import FingerprintPopup from './src/FingerprintPopup.component';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-//  AppDynamics
-// To import the Appdynamics React Native Agent
-import { Instrumentation } from '@appdynamics/react-native-agent';
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      errorMessage: undefined,
+      biometric: undefined,
+      popupShowed: false,
+    };
+  }
 
-// Initialize the instrumentation
-Instrumentation.start({
-  appKey: 'EUM-AAB-AVK',
-  collectorURL: 'https://rakbankonline.ae:7002'
-});
+  handleFingerprintShowed = () => {
+    this.setState({popupShowed: true});
+  };
 
-const App: () => React$Node = () => {
-  return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
-};
+  handleFingerprintDismissed = () => {
+    this.setState({popupShowed: false});
+  };
 
-const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
-  },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
-    backgroundColor: Colors.white,
-  },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
-  },
-});
+  componentDidMount() {
+    AppState.addEventListener('change', this.handleAppStateChange);
+    // Get initial fingerprint enrolled
+    this.detectFingerprintAvailable().then(() => {
+      this.handleFingerprintShowed();
+    });
+  }
+
+  componentWillUnmount() {
+    AppState.removeEventListener('change', this.handleAppStateChange);
+  }
+
+  detectFingerprintAvailable = () => {
+    return FingerprintScanner.isSensorAvailable().catch((error) =>
+      this.setState({errorMessage: error.message, biometric: error.biometric}),
+    );
+  };
+
+  handleAppStateChange = (nextAppState) => {
+    if (
+      this.state.appState &&
+      this.state.appState.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      FingerprintScanner.release();
+      this.detectFingerprintAvailable();
+    }
+    this.setState({appState: nextAppState});
+  };
+  onAuthenticate = () => {
+    console.log('authenticated');
+  };
+  render() {
+    const {errorMessage, biometric, popupShowed} = this.state;
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>React Native Fingerprint Scanner</Text>
+        <Text style={styles.subheading}>
+          https://github.com/hieuvp/react-native-fingerprint-scanner
+        </Text>
+
+        <TouchableOpacity
+          style={styles.fingerprint}
+          onPress={this.handleFingerprintShowed}
+          disabled={!!errorMessage}>
+          <Image source={require('./src/assets/finger_print.png')} />
+        </TouchableOpacity>
+
+        {errorMessage && (
+          <Text style={styles.errorMessage}>
+            {errorMessage} {biometric}
+          </Text>
+        )}
+
+        {popupShowed && (
+          <FingerprintPopup
+            style={styles.popup}
+            handlePopupDismissed={this.handleFingerprintDismissed}
+            onAuthenticate={this.onAuthenticate}
+          />
+        )}
+      </View>
+    );
+  }
+}
 
 export default App;

@@ -1,5 +1,8 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+// Applies the AppDynamics build time instrumentation plugin.
+// This should be placed at the top of your top-level build.gradle file.
+
 buildscript {
     ext {
         buildToolsVersion = "29.0.2"
@@ -14,7 +17,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:3.3.2')
+        classpath('com.android.tools.build:gradle:3.4.0')
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

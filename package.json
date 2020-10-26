@@ -10,9 +10,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@appdynamics/react-native-agent": "^20.7.0",
     "react": "16.13.1",
-    "react-native": "0.63.3"
+    "react-native": "0.63.3",
+    "react-native-fingerprint-scanner": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
